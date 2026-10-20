@@ -58,11 +58,13 @@ if (-not (Test-Path $usersFile)) {
 }
 
 $nodeExe = (Get-Command node).Source
-$taskName = "OrdenCompra"
+$taskName = "JPG_OC"
 
-$existing = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
-if ($existing) {
-  Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
+foreach ($oldName in @($taskName, "OrdenCompra")) {
+  $existing = Get-ScheduledTask -TaskName $oldName -ErrorAction SilentlyContinue
+  if ($existing) {
+    Unregister-ScheduledTask -TaskName $oldName -Confirm:$false
+  }
 }
 
 $action = New-ScheduledTaskAction -Execute $nodeExe -Argument "server.mjs" -WorkingDirectory $Root
@@ -82,7 +84,7 @@ Register-ScheduledTask `
   -Trigger $trigger `
   -Principal $principal `
   -Settings $settings `
-  -Description "Orden de compra PDF en el puerto 8081" | Out-Null
+  -Description "JPG_OC orden de compra PDF en el puerto 8081" | Out-Null
 
 Start-ScheduledTask -TaskName $taskName
 
@@ -93,8 +95,8 @@ Write-Host "  Usuarios: $usersFile"
 Write-Host "  Historial: $env:USERPROFILE\.local\share\orden-compra\historial\"
 Write-Host ""
 Write-Host "Comandos:"
-Write-Host "  Start-ScheduledTask -TaskName OrdenCompra"
-Write-Host "  Stop-ScheduledTask -TaskName OrdenCompra"
-Write-Host "  Get-ScheduledTask -TaskName OrdenCompra"
+Write-Host "  Start-ScheduledTask -TaskName JPG_OC"
+Write-Host "  Stop-ScheduledTask -TaskName JPG_OC"
+Write-Host "  Get-ScheduledTask -TaskName JPG_OC"
 Write-Host ""
 Write-Host "Si el puerto 8081 debe verse desde otra maquina, permitilo en el Firewall de Windows."

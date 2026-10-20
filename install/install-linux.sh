@@ -59,11 +59,11 @@ fi
 
 UNIT_DIR="$HOME/.config/systemd/user"
 mkdir -p "$UNIT_DIR"
-UNIT_FILE="$UNIT_DIR/orden-compra.service"
+UNIT_FILE="$UNIT_DIR/JPG_OC.service"
 
 cat > "$UNIT_FILE" <<EOF
 [Unit]
-Description=Orden de compra (plantilla PDF)
+Description=JPG_OC (orden de compra)
 After=network-online.target
 Wants=network-online.target
 
@@ -88,7 +88,8 @@ if ! command -v systemctl >/dev/null 2>&1; then
 fi
 
 systemctl --user daemon-reload
-systemctl --user enable --now orden-compra.service
+systemctl --user disable --now orden-compra.service 2>/dev/null || true
+systemctl --user enable --now JPG_OC.service
 loginctl enable-linger "$USER" 2>/dev/null || true
 
 echo
@@ -98,8 +99,8 @@ echo "  Usuarios: $ROOT/users.json"
 echo "  Historial: $HOME/.local/share/orden-compra/historial/"
 echo
 echo "Comandos:"
-echo "  systemctl --user status orden-compra"
-echo "  systemctl --user restart orden-compra"
-echo "  journalctl --user -u orden-compra -f"
+echo "  systemctl --user status JPG_OC"
+echo "  systemctl --user restart JPG_OC"
+echo "  journalctl --user -u JPG_OC -f"
 echo
 echo "Si el puerto 8081 debe verse desde otra máquina, abrilo en el firewall."

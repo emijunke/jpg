@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Sube este repositorio a https://github.com/emijunke/jpg.git
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT"
+
+REMOTE="https://github.com/emijunke/jpg.git"
+BRANCH="main"
+MENSAJE="${1:-Actualización de la app}"
+
+if ! command -v git >/dev/null 2>&1; then
+  echo "Falta git. Instalá git y volvé a ejecutar ./SubirAgit" >&2
+  exit 1
+fi
+
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  git init -b "$BRANCH"
+fi
+
+if ! git config user.name >/dev/null || ! git config user.email >/dev/null; then
+  echo "Git no tiene nombre ni email configurados." >&2
+  echo "Ejecutá una vez:" >&2
+  echo "  git config --global user.name \"Tu nombre\"" >&2
+  echo "  git config --global user.email \"tu-email@ejemplo.com\"" >&2
+  exit 1
+fi
+
+if git remote get-url origin >/dev/null 2>&1; then
+  git remote set-url origin "$REMOTE"
+else
+  git remote add origin "$REMOTE"
+fi
+
+git add -A
+
+if git diff --cached --quiet; then
+  echo "No hay cambios nuevos para commitear."
+else
+  git commit -m "$MENSAJE"
+fi
+
+if command -v gh >/dev/null 2>&1; then
+  if ! gh auth status >/dev/null 2>&1; then
+    echo "No hay sesión de GitHub. Ejecutá: gh auth login" >&2
+    echo "Cuando termine, volvé a correr: ./SubirAgit" >&2
+    exit 1
+  fi
+fi
+
+git push -u origin "$BRANCH"
+echo "Subido a $REMOTE (rama $BRANCH)."

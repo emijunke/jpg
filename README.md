@@ -14,12 +14,12 @@ cd jpg
 bash install/install-linux.sh
 ```
 
-Queda como servicio de usuario `orden-compra` (arranca al iniciar sesión, y con linger también sin sesión gráfica).
+Queda como servicio de usuario `JPG_OC` (arranca al iniciar sesión, y con linger también sin sesión gráfica).
 
 ```bash
-systemctl --user status orden-compra
-systemctl --user restart orden-compra
-journalctl --user -u orden-compra -f
+systemctl --user status JPG_OC
+systemctl --user restart JPG_OC
+journalctl --user -u JPG_OC -f
 ```
 
 ### Windows
@@ -32,11 +32,11 @@ cd jpg
 powershell -ExecutionPolicy Bypass -File .\install\install-windows.ps1
 ```
 
-Queda como tarea programada `OrdenCompra`, que arranca al iniciar sesión.
+Queda como tarea programada `JPG_OC`, que arranca al iniciar sesión.
 
 ```powershell
-Start-ScheduledTask -TaskName OrdenCompra
-Stop-ScheduledTask -TaskName OrdenCompra
+Start-ScheduledTask -TaskName JPG_OC
+Stop-ScheduledTask -TaskName JPG_OC
 ```
 
 Abrí http://127.0.0.1:8081/
@@ -69,8 +69,8 @@ npm ci --ignore-scripts
 npm run build
 ```
 
-En Linux: `systemctl --user restart orden-compra`  
-En Windows: `Stop-ScheduledTask -TaskName OrdenCompra; Start-ScheduledTask -TaskName OrdenCompra`
+En Linux: `systemctl --user restart JPG_OC`  
+En Windows: `Stop-ScheduledTask -TaskName JPG_OC; Start-ScheduledTask -TaskName JPG_OC`
 
 ## Campos de la orden
 
