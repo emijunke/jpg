@@ -92,9 +92,26 @@ Ensure-Node
 
 function Invoke-Npm {
   param([Parameter(ValueFromRemainingArguments = $true)][string[]]$NpmArgs)
-  & npm @NpmArgs
-  if ($LASTEXITCODE -ne 0) {
-    throw "npm $($NpmArgs -join ' ') fallo con codigo $LASTEXITCODE"
+  # En PowerShell, "npm" es npm.ps1 y un aviso en stderr corta el script.
+  # npm.cmd se ejecuta dentro de cmd y el aviso no vuelve como error.
+  $nodeDir = Split-Path (Get-Command node).Source
+  $npmCmd = Join-Path $nodeDir "npm.cmd"
+  if (-not (Test-Path $npmCmd)) { $npmCmd = "npm.cmd" }
+
+  $quoted = foreach ($arg in $NpmArgs) {
+    if ($arg -match '[\s"]') { '"' + ($arg -replace '"', '\"') + '"' } else { $arg }
+  }
+  $argLine = $quoted -join " "
+  $log = Join-Path $env:TEMP ("jpg-oc-npm-{0}.log" -f [guid]::NewGuid().ToString("n"))
+
+  & cmd.exe /d /c "`"$npmCmd`" $argLine > `"$log`" 2>&1"
+  $code = $LASTEXITCODE
+  if (Test-Path $log) {
+    Get-Content -Path $log | ForEach-Object { Write-Host $_ }
+    Remove-Item $log -Force -ErrorAction SilentlyContinue
+  }
+  if ($code -ne 0) {
+    throw "npm $argLine fallo con codigo $code"
   }
 }
 
