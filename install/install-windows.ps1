@@ -13,6 +13,51 @@ function Refresh-Path {
   $env:Path = "$machine;$user"
 }
 
+function Install-NodeZip {
+  Write-Host "Descargando Node.js LTS desde nodejs.org..."
+  $index = Invoke-RestMethod -Uri "https://nodejs.org/dist/index.json"
+  $release = $index | Where-Object {
+    $_.lts -and ([int]($_.version.TrimStart("v").Split(".")[0]) -ge 20)
+  } | Select-Object -First 1
+  if (-not $release) {
+    throw "No se encontro un Node.js LTS 20 o superior en nodejs.org."
+  }
+
+  $arch = "win-x64"
+  if ($env:PROCESSOR_ARCHITECTURE -eq "ARM64") { $arch = "win-arm64" }
+  $version = $release.version
+  $zipName = "node-$version-$arch.zip"
+  $url = "https://nodejs.org/dist/$version/$zipName"
+  $zipPath = Join-Path $env:TEMP $zipName
+  $extractRoot = Join-Path $env:TEMP "jpg-oc-node-extract"
+  $installDir = Join-Path $env:LOCALAPPDATA "jpg-oc\nodejs"
+
+  Write-Host "  $url"
+  Invoke-WebRequest -Uri $url -OutFile $zipPath -UseBasicParsing
+
+  if (Test-Path $extractRoot) { Remove-Item $extractRoot -Recurse -Force }
+  Expand-Archive -Path $zipPath -DestinationPath $extractRoot -Force
+  $inner = Get-ChildItem $extractRoot -Directory | Select-Object -First 1
+  if (-not $inner) { throw "El zip de Node.js no tiene la carpeta esperada." }
+
+  if (Test-Path $installDir) { Remove-Item $installDir -Recurse -Force }
+  New-Item -ItemType Directory -Path $installDir -Force | Out-Null
+  Copy-Item -Path (Join-Path $inner.FullName "*") -Destination $installDir -Recurse -Force
+
+  $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+  if (-not $userPath) { $userPath = "" }
+  if ($userPath -notlike "*$installDir*") {
+    $joined = @($userPath.TrimEnd(";"), $installDir) | Where-Object { $_ }
+    [Environment]::SetEnvironmentVariable("Path", ($joined -join ";"), "User")
+  }
+  $env:Path = "$installDir;$env:Path"
+
+  if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+    throw "Node.js se descargo en $installDir pero no se puede ejecutar."
+  }
+  Write-Host "Node.js $(node -v) instalado en $installDir"
+}
+
 function Ensure-Node {
   Refresh-Path
   $node = Get-Command node -ErrorAction SilentlyContinue
@@ -22,22 +67,21 @@ function Ensure-Node {
       Write-Host "Node.js $(node -v) ya esta instalado."
       return
     }
-    Write-Host "Node.js es anterior a la version 20."
+    Write-Host "Node.js es anterior a la version 20. Se instala uno nuevo."
   } else {
-    Write-Host "No hay Node.js."
+    Write-Host "No hay Node.js. Se descarga e instala."
   }
 
   $winget = Get-Command winget -ErrorAction SilentlyContinue
-  if (-not $winget) {
-    throw "Instala Node.js 20 o superior desde https://nodejs.org y vuelve a ejecutar este script."
+  if ($winget) {
+    Write-Host "Instalando Node.js LTS con winget..."
+    winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements
+    Refresh-Path
+    if (Get-Command node -ErrorAction SilentlyContinue) { return }
+    Write-Host "winget no dejo node en el PATH. Se instala la version zip."
   }
 
-  Write-Host "Instalando Node.js LTS con winget..."
-  winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements
-  Refresh-Path
-  if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
-    throw "Node.js se instalo, pero esta consola no lo ve. Cerra PowerShell, abrila de nuevo y volve a ejecutar el script."
-  }
+  Install-NodeZip
 }
 
 Ensure-Node
