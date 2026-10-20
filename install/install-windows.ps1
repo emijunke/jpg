@@ -1,5 +1,9 @@
 # Instala la app en Windows: Node.js 20+, dependencias, build y tarea al iniciar sesión.
 $ErrorActionPreference = "Stop"
+# npm escribe avisos en stderr. Sin esto, PowerShell corta el script en el primer warning.
+if (Get-Variable -Name PSNativeCommandUseErrorActionPreference -ErrorAction SilentlyContinue) {
+  $PSNativeCommandUseErrorActionPreference = $false
+}
 
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $Root
@@ -86,13 +90,19 @@ function Ensure-Node {
 
 Ensure-Node
 
+function Invoke-Npm {
+  param([Parameter(ValueFromRemainingArguments = $true)][string[]]$NpmArgs)
+  & npm @NpmArgs
+  if ($LASTEXITCODE -ne 0) {
+    throw "npm $($NpmArgs -join ' ') fallo con codigo $LASTEXITCODE"
+  }
+}
+
 Write-Host "Instalando dependencias..."
-npm ci --ignore-scripts
-if ($LASTEXITCODE -ne 0) { throw "npm ci fallo" }
+Invoke-Npm ci --ignore-scripts
 
 Write-Host "Compilando la aplicacion..."
-npm run build
-if ($LASTEXITCODE -ne 0) { throw "npm run build fallo" }
+Invoke-Npm run build
 
 $usersFile = Join-Path $Root "users.json"
 if (-not (Test-Path $usersFile)) {
