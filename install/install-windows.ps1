@@ -171,3 +171,9 @@ Write-Host "  Stop-ScheduledTask -TaskName JPG_OC"
 Write-Host "  Get-ScheduledTask -TaskName JPG_OC"
 Write-Host ""
 Write-Host "Si el puerto 8081 debe verse desde otra maquina, permitilo en el Firewall de Windows."
+Write-Host ""
+Write-Host "Dejando la carpeta como aplicacion local..."
+$limpiar = Join-Path $Root "Limpiar.ps1"
+if (Test-Path $limpiar) {
+  & $limpiar
+}
