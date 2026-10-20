@@ -1,0 +1,23 @@
+{
+  "name": "plantilla-pdf",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 8081",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 8081",
+    "plantilla": "node scripts/make-plantilla.mjs",
+    "start": "node server.mjs",
+    "serve": "npm run build && node server.mjs"
+  },
+  "devDependencies": {
+    "canvas": "^3.2.3",
+    "vite": "^8.2.0"
+  },
+  "dependencies": {
+    "cookie-session": "^2.1.1",
+    "express": "^5.2.1",
+    "jspdf": "^4.2.1"
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "width": 1588,
+  "height": 2242,
+  "fields": {
+    "numeroOrden": {
+      "x": 1095,
+      "y": 186,
+      "maxWidth": 360,
+      "fontSize": 28,
+      "fontWeight": "bold"
+    },
+    "fecha": {
+      "x": 1115,
+      "y": 245,
+      "maxWidth": 200,
+      "fontSize": 20
+    },
+    "fechaRecepcion": {
+      "x": 185,
+      "y": 482,
+      "maxWidth": 170,
+      "fontSize": 18
+    },
+    "fechaVigencia": {
+      "x": 600,
+      "y": 482,
+      "maxWidth": 170,
+      "fontSize": 18
+    },
+    "razonSocial": {
+      "x": 970,
+      "y": 482,
+      "maxWidth": 500,
+      "fontSize": 20,
+      "fontWeight": "bold"
+    }
+  },
+  "renglones": {
+    "firstY": 765,
+    "rowHeight": 32,
+    "maxRows": 25,
+    "columns": {
+      "codigo": {
+        "x": 95,
+        "maxWidth": 90,
+        "fontSize": 22
+      },
+      "descripcion": {
+        "x": 235,
+        "maxWidth": 860,
+        "fontSize": 22
+      },
+      "cantidad": {
+        "x": 1180,
+        "maxWidth": 100,
+        "fontSize": 22,
+        "align": "center"
+      }
+    }
+  }
+}

@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Historial — Orden de compra</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Outfit:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #152028;
+        --muted: #5c6b76;
+        --accent: #147a72;
+        --accent-deep: #0d5a54;
+        --line: #d7e2e0;
+        --surface: #fff;
+        --font-display: "Outfit", sans-serif;
+        --font-body: "IBM Plex Sans", sans-serif;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: var(--font-body);
+        color: var(--ink);
+        background:
+          radial-gradient(ellipse 70% 45% at 0% 0%, rgba(20, 122, 114, 0.16), transparent 55%),
+          linear-gradient(160deg, #d5e3e0 0%, #e4ebe9 45%, #d9e2e4 100%);
+      }
+      .page {
+        width: min(1100px, calc(100% - 2rem));
+        margin: 0 auto;
+        padding: 1.5rem 0 3rem;
+      }
+      .top {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 1.1rem;
+      }
+      h1 {
+        margin: 0;
+        font-family: var(--font-display);
+        font-size: 1.55rem;
+        letter-spacing: -0.02em;
+      }
+      .sub {
+        margin: 0.35rem 0 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .nav a {
+        color: var(--accent-deep);
+        font-weight: 600;
+        text-decoration: none;
+        margin-left: 1rem;
+      }
+      .nav a:hover { text-decoration: underline; }
+      .panel {
+        background: var(--surface);
+        border: 1px solid rgba(21, 32, 40, 0.08);
+        border-radius: 10px;
+        padding: 0.4rem 0;
+        box-shadow: 0 10px 30px rgba(21, 32, 40, 0.07);
+        overflow: hidden;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th, td {
+        text-align: left;
+        padding: 0.85rem 1.1rem;
+        border-bottom: 1px solid var(--line);
+        font-size: 0.95rem;
+      }
+      th {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        background: #f4f8f7;
+      }
+      tr:last-child td { border-bottom: none; }
+      .empty {
+        margin: 0;
+        padding: 2rem 1.1rem;
+        color: var(--muted);
+        text-align: center;
+      }
+      .btn {
+        display: inline-block;
+        border: 1.5px solid var(--accent);
+        border-radius: 7px;
+        background: #fff;
+        color: var(--accent-deep);
+        font: inherit;
+        font-weight: 600;
+        font-size: 0.88rem;
+        padding: 0.4rem 0.75rem;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .btn:hover { background: rgba(20, 122, 114, 0.08); }
+      .btn-danger {
+        border-color: #e8b4b0;
+        color: #b42318;
+        margin-left: 0.35rem;
+      }
+      .btn-danger:hover { background: #fff6f5; }
+      .row-actions { white-space: nowrap; }
+      .meta { color: var(--muted); font-size: 0.88rem; }
+      .error {
+        color: #b42318;
+        padding: 1rem 1.1rem;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="top">
+        <div>
+          <h1>Historial de PDFs</h1>
+          <p class="sub">Compartido: se listan las órdenes de todos los usuarios.</p>
+        </div>
+        <nav class="nav">
+          <a href="/">Nueva orden</a>
+          <a href="#" id="logout">Cerrar sesión</a>
+        </nav>
+      </div>
+      <div class="panel" id="panel">
+        <p class="empty">Cargando…</p>
+      </div>
+    </div>
+    <script>
+      const panel = document.getElementById("panel");
+      let canDelete = false;
+
+      document.getElementById("logout").addEventListener("click", async (e) => {
+        e.preventDefault();
+        try {
+          await fetch("/api/logout", { method: "POST" });
+        } catch {}
+        location.href = "/login";
+      });
+
+      function formatDate(iso) {
+        try {
+          const d = new Date(iso);
+          return d.toLocaleString("es-AR", {
+            dateStyle: "short",
+            timeStyle: "short",
+          });
+        } catch {
+          return iso;
+        }
+      }
+
+      async function loadMe() {
+        const res = await fetch("/api/me", { cache: "no-store" });
+        if (res.status === 401) {
+          location.href = "/login";
+          return null;
+        }
+        if (!res.ok) return { canDelete: false };
+        return res.json();
+      }
+
+      async function deleteItem(id) {
+        if (!confirm("¿Borrar esta orden del historial?")) return;
+        const res = await fetch(`/api/historial/${encodeURIComponent(id)}`, {
+          method: "DELETE",
+        });
+        if (res.status === 401) {
+          location.href = "/login";
+          return;
+        }
+        if (res.status === 403) {
+          alert("Solo el usuario admin puede borrar órdenes.");
+          return;
+        }
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          alert(data.error || "No se pudo borrar la orden.");
+          return;
+        }
+        load();
+      }
+
+      async function load() {
+        try {
+          const me = await loadMe();
+          if (!me) return;
+          canDelete = Boolean(me.canDelete);
+
+          const res = await fetch("/api/historial", { cache: "no-store" });
+          if (res.status === 401) {
+            location.href = "/login";
+            return;
+          }
+          if (!res.ok) throw new Error("No se pudo cargar el historial");
+          const items = await res.json();
+          if (!items.length) {
+            panel.innerHTML = '<p class="empty">Todavía no hay PDFs generados.</p>';
+            return;
+          }
+          panel.innerHTML = `
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>N° orden</th>
+                  <th>Razón social</th>
+                  <th>Usuario</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                ${items
+                  .map(
+                    (item) => `
+                  <tr>
+                    <td>${formatDate(item.createdAt)}</td>
+                    <td>${escapeHtml(item.numeroOrden || "—")}</td>
+                    <td>${escapeHtml(item.razonSocial || "—")}</td>
+                    <td class="meta">${escapeHtml(item.createdBy || "—")}</td>
+                    <td class="row-actions">
+                      <a class="btn" href="/api/historial/${encodeURIComponent(item.id)}/download">
+                        Descargar
+                      </a>
+                      ${
+                        canDelete
+                          ? `<button type="button" class="btn btn-danger" data-delete="${escapeHtml(item.id)}">Borrar</button>`
+                          : ""
+                      }
+                    </td>
+                  </tr>`
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          `;
+
+          panel.querySelectorAll("[data-delete]").forEach((btn) => {
+            btn.addEventListener("click", () => deleteItem(btn.dataset.delete));
+          });
+        } catch (err) {
+          panel.innerHTML = `<p class="error">${escapeHtml(err.message)}</p>`;
+        }
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      load();
+    </script>
+  </body>
+</html>
